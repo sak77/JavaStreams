@@ -4,9 +4,14 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 
+import java.util.AbstractSet;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -14,14 +19,48 @@ import java.util.stream.Stream;
 
 import static com.saket.javastreams.MainActivity.Gender.*;
 
+/**
+ * Stream is a sequence of elements.
+ * <p>
+ * The java.util.Stream interface provides a sequence of elements and
+ * a set of methods that support aggregate operations (foreach, filter etc.) on these elements.
+ * <p>
+ * The java collections framework (java.util.collection) provides a method stream()
+ * which allows to convert any of its children (List, Set, Queue, Map etc) to be converted into
+ * a stream instance.
+ */
 public class MainActivity extends AppCompatActivity {
 
+    /*
+    List — an ordered collection (sometimes called a sequence).
+    Lists can contain duplicate elements.
+    The user of a List generally has precise control over where in the list each element
+    is inserted and can access elements by their integer index (position).
+     */
     List<Member> family;
+
+    /*
+    Set — a collection that cannot contain duplicate elements.
+    Sets cannot contain 2 elements e1 and e2 where e1.equals(e2)
+    At most 1 null element.
+    Care must be taken if having mutable elements in the set, so that they
+    do not fail the not equals condition of a set.
+     */
+    Set<Member> familySet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //I think CopyOnWriteArraySet is used for concurrent tasks
+        //familySet = new CopyOnWriteArraySet<>();
+        //Empty set does not support addAll()
+        //familySet = Collections.emptySet();
+        //All members of Tree set should implement Comparable interface
+        familySet = new TreeSet<>();
+
+        //Member vishket = new Member("Vishket", MALE, 32);
         family = Arrays.asList(
                 new Member("Saket", MALE, 36),
                 new Member("Komal", FEMALE, 31),
@@ -29,8 +68,21 @@ public class MainActivity extends AppCompatActivity {
                 new Member("Mummy", FEMALE, 61),
                 new Member("Bunny", MALE, 3),
                 new Member("Aniket", MALE, 35),
+                new Member("Vishket", MALE, 32),
+                new Member("Vishket", MALE, 32),
                 new Member("Vishket", MALE, 32));
 
+
+        /*
+            Here we will see that although List contains duplicate members, which we add to the Set.
+            But when the Set streams data, it only shows unique values..
+         */
+/*
+        familySet.addAll(family);
+
+        familySet.stream()
+                .forEach(member -> System.out.println("Family member name " + member.name));
+*/
 
         //Print all items in the list
         //iterate_streams();
@@ -53,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         collect_stream();
     }
 
-    class Member {
+    class Member implements Comparable<Member> {
         private final String name;
         private final Gender gender;
         private String star_sing;
@@ -81,6 +133,11 @@ public class MainActivity extends AppCompatActivity {
         public void setFavorite_colors(List<String> favorite_colors) {
             this.favorite_colors = favorite_colors;
         }
+
+        @Override
+        public int compareTo(Member o) {
+            return name.compareTo(o.name);
+        }
     }
 
     enum Gender {
@@ -96,7 +153,9 @@ public class MainActivity extends AppCompatActivity {
     //ForEach is a terminal operation that performs action for each item of the stream.
     //for parallel stream it does not guarantee to respect the encounter order of the stream.
     private void iterate_streams() {
-        streamify().forEach(person -> System.out.println("Name : " + person.name));
+        streamify()
+                .distinct() //Note distinct only compares references. So two new members with same name will still be considered as distinct obejcts...
+                .forEach(person -> System.out.println("Name : " + person.name));
     }
 
     //Filter a stream.
@@ -112,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
     //Maps can change the type of element that are returned in the stream. However in this
     //example i am returning the same type as the input type. Again, this is an intermediate operation.
     private void map_stream() {
-       //First i define an imaginary function which returns the star sign for each member based on some logic...
+        //First i define an imaginary function which returns the star sign for each member based on some logic...
         Function<Member, Member> getStarSignFunction = member -> {
             switch (member.name) {
                 case "Saket":
@@ -150,9 +209,9 @@ public class MainActivity extends AppCompatActivity {
     use the flatmap. Basically you flatten the map here.
      */
     private void flatmap_streams() {
-        for (Member member: family) {
-            member.setFavorite_colors(Arrays.asList("Red", "Blue", "Yellow", "Green"));
-        }
+        //Add favorite colors for family members
+        family.stream()
+                .forEach(member -> member.setFavorite_colors(Arrays.asList("Red", "Blue", "Yellow", "Green")));
 
         //Now each family member has its own list of fav colors. We want to print the members and their favorite colors
         streamify()
@@ -185,8 +244,9 @@ public class MainActivity extends AppCompatActivity {
 
     //Reduction - can be used to reducing sequence of elements to a value according a given function.
     private void reduce_stream() {
-        //A Binary operator is a bi.function that represents a operation between 2 operands of same type and return is also same type.
-        //For this sample we provide sum of age of 2 family members
+        //A Binary operator is a bi.function that represents a operation between 2 operands
+        // of same type and return is also same type.
+        //For this sample we provide sum of age of 2 family members.
         BinaryOperator<Integer> binaryOperator = (age1, age2) -> age1 + age2;
 
         Optional<Integer> reduced = family.stream()
