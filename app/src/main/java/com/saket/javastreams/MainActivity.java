@@ -4,18 +4,14 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 
-import java.util.AbstractSet;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.saket.javastreams.MainActivity.Gender.*;
 
@@ -30,6 +26,45 @@ import static com.saket.javastreams.MainActivity.Gender.*;
  * a stream instance.
  */
 public class MainActivity extends AppCompatActivity {
+
+    static class Member implements Comparable<Member> {
+        private final String name;
+        private final Gender gender;
+        private String starSing;
+        private final int age;
+        private List<String> favoriteColors;
+
+        Member(String name, Gender gender, int age) {
+            this.name = name;
+            this.gender = gender;
+            this.age = age;
+        }
+
+        public void setStarSign(String starSing) {
+            this.starSing = starSing;
+        }
+
+        public String getStarSign() {
+            return starSing;
+        }
+
+        public List<String> getFavoriteColors() {
+            return favoriteColors;
+        }
+
+        public void setFavoriteColors(List<String> favoriteColors) {
+            this.favoriteColors = favoriteColors;
+        }
+
+        @Override
+        public int compareTo(Member o) {
+            return name.compareTo(o.name);
+        }
+    }
+
+    enum Gender {
+        MALE, FEMALE
+    }
 
     /*
     List — an ordered collection (sometimes called a sequence).
@@ -85,84 +120,40 @@ public class MainActivity extends AppCompatActivity {
 */
 
         //Print all items in the list
-        //iterate_streams();
+        //iterateStreams();
 
         //Print names of only female members of the family
-        //filter_stream();
+        //filterStream();
 
         //Print star signs for each family member
-        //map_stream();
+        //mapStream();
         //Display favorite colors of each family member
-        //flatmap_streams();
+        //flatmapStreams();
 
         //Match names of family
-        //match_streams();
+        //matchStreams();
 
         //Get sum of age of family
-        //reduce_stream();
+        reduceStream();
 
         //Print family member names as a list
-        collect_stream();
-    }
-
-    class Member implements Comparable<Member> {
-        private final String name;
-        private final Gender gender;
-        private String star_sing;
-        private final int age;
-        private List<String> favorite_colors;
-
-        Member(String name, Gender gender, int age) {
-            this.name = name;
-            this.gender = gender;
-            this.age = age;
-        }
-
-        public void setStar_sing(String star_sing) {
-            this.star_sing = star_sing;
-        }
-
-        public String getStar_sing() {
-            return star_sing;
-        }
-
-        public List<String> getFavorite_colors() {
-            return favorite_colors;
-        }
-
-        public void setFavorite_colors(List<String> favorite_colors) {
-            this.favorite_colors = favorite_colors;
-        }
-
-        @Override
-        public int compareTo(Member o) {
-            return name.compareTo(o.name);
-        }
-    }
-
-    enum Gender {
-        MALE, FEMALE
-    }
-
-    //Creating Streams
-    private Stream<Member> streamify() {
-        return family.stream();
+        //collectStream();
     }
 
     //Iterate through stream
     //ForEach is a terminal operation that performs action for each item of the stream.
     //for parallel stream it does not guarantee to respect the encounter order of the stream.
-    private void iterate_streams() {
-        streamify()
-                .distinct() //Note distinct only compares references. So two new members with same name will still be considered as distinct obejcts...
+    private void iterateStreams() {
+        family.stream()
+                .distinct() //Note distinct only compares references. So two new members with same name will still be considered as distinct objects...
                 .forEach(person -> System.out.println("Name : " + person.name));
     }
 
     //Filter a stream.
     //Filter is an intermediate operation that takes a predicate and returns elements which satisfy the condition.
-    private void filter_stream() {
+    private void filterStream() {
         //Filter all women in the family
-        streamify()
+        family.stream()
                 .filter(member -> FEMALE.equals(member.gender))
                 .forEach(member -> System.out.println("Name : " + member.name));
     }
@@ -170,36 +161,36 @@ public class MainActivity extends AppCompatActivity {
     //Maps - apply a function to each element of the stream before returning them..
     //Maps can change the type of element that are returned in the stream. However in this
     //example i am returning the same type as the input type. Again, this is an intermediate operation.
-    private void map_stream() {
+    private void mapStream() {
         //First i define an imaginary function which returns the star sign for each member based on some logic...
         Function<Member, Member> getStarSignFunction = member -> {
             switch (member.name) {
                 case "Saket":
-                    member.setStar_sing("Cancer");
+                    member.setStarSign("Cancer");
                     break;
                 case "Komal":
-                    member.setStar_sing("Scorpio");
+                    member.setStarSign("Scorpio");
                     break;
                 case "Bunny":
-                    member.setStar_sing("Virgo");
+                    member.setStarSign("Virgo");
                     break;
                 case "Daddy":
-                    member.setStar_sing("Sagittarius");
+                    member.setStarSign("Sagittarius");
                     break;
                 case "Mummy":
-                    member.setStar_sing("Libra");
+                    member.setStarSign("Libra");
                     break;
                 case "Vishket":
-                    member.setStar_sing("Aquarius");
+                    member.setStarSign("Aquarius");
                     break;
                 case "Aniket":
-                    member.setStar_sing("Leo");
+                    member.setStarSign("Leo");
             }
             return member;
         };
         //Then we pass this function to the map operator which returns the star sign and we finally print it using foreach terminal operator
-        streamify().map(getStarSignFunction)
-                .forEach(member -> System.out.println("Name : " + member.name + ", Star sign - " + member.getStar_sing()));
+        family.stream().map(getStarSignFunction)
+                .forEach(member -> System.out.println("Name : " + member.name + ", Star sign - " + member.getStarSign()));
     }
 
 
@@ -208,42 +199,41 @@ public class MainActivity extends AppCompatActivity {
     has its own sequence of elements. And if you wish to return only elements from the child element then you
     use the flatmap. Basically you flatten the map here.
      */
-    private void flatmap_streams() {
+    private void flatmapStreams() {
         //Add favorite colors for family members
         family.stream()
-                .forEach(member -> member.setFavorite_colors(Arrays.asList("Red", "Blue", "Yellow", "Green")));
+                .forEach(member -> member.setFavoriteColors(Arrays.asList("Red", "Blue", "Yellow", "Green")));
 
         //Now each family member has its own list of fav colors. We want to print the members and their favorite colors
-        streamify()
+        family.stream()
                 .flatMap(member -> {
                     System.out.println("Member Name - " + member.name);
-                    return member.getFavorite_colors().stream();
+                    return member.getFavoriteColors().stream();
                 })
                 .forEach(color -> System.out.println("Favorite Color - " + color));
-
     }
 
     //Matching - streams provides 3 different matchers -
     //anyMatch, allMatch and noneMatch. Each takes a predicate which returns a boolean which indicates if the element satisfy the predicate..
-    private void match_streams() {
+    private void matchStreams() {
         //Here we check if any member of the family has name with letter a
-        final boolean any_contains_a = streamify()
+        final boolean any_contains_a = family.stream()
                 .anyMatch(member -> member.name.contains("a"));
         System.out.println(any_contains_a ? "Family member contains name with a" : "No family member contains name with a");
 
         //Here we check if all members of the family has name with letter a
-        final boolean all_contains_a = streamify()
+        final boolean all_contains_a = family.stream()
                 .allMatch(member -> member.name.contains("a"));
         System.out.println(all_contains_a ? "All family member contains name with a" : "Not all family members contains name with a");
 
         //Here we check if none of members of the family has name with letter a
-        final boolean none_contains_a = streamify()
+        final boolean none_contains_a = family.stream()
                 .noneMatch(member -> member.name.contains("a"));
         System.out.println(none_contains_a ? "No family member contains name with a" : "Some family members contains name with a");
     }
 
     //Reduction - can be used to reducing sequence of elements to a value according a given function.
-    private void reduce_stream() {
+    private void reduceStream() {
         //A Binary operator is a bi.function that represents a operation between 2 operands
         // of same type and return is also same type.
         //For this sample we provide sum of age of 2 family members.
@@ -257,8 +247,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //Collection - another way to achieve reduction is by converting stream to a collection or a hash
-    private void collect_stream() {
-        List<Member> memberList = streamify().collect(Collectors.toList());
+    private void collectStream() {
+        List<Member> memberList = family.stream().collect(Collectors.toList());
         memberList.forEach(member -> System.out.println(member.name));
     }
 
